@@ -1,6 +1,8 @@
 build
+bin
 out
 .cache
 .idea
 .vs
 .vscode
+CMakeSettings.json

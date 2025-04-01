@@ -17,16 +17,11 @@ using namespace sf;
 //         p6 ---------------o---------------- p4  
 //                           p5
 
-enum selectedPoint {
-    None,
-    P1,
-    P2,
-    TOP,
-    BOTTOM
-};
+
 
 class Wall {
 public:
+    enum selectedPoint {None, P1, P2, TOP, BOTTOM};
     Wall(Vector2f& point, float thickness);
     RectangleShape shape;
     CircleShape p1shape;
@@ -35,17 +30,20 @@ public:
     CircleShape bottomshape;
     Vector2f p1;
     Vector2f p2;
+    Vector2f p3;
+    Vector2f p4;
     Vector2f top;
     Vector2f bottom;
     bool selected;
     selectedPoint selectedPoint;
     
     bool selectPoint(Vector2f& target);
-    void edit(Vector2f& destination);
-    void move(Vector2f& p);
     void select();  
     void unselect();
-    void calculatePointsFromShape();
+    void edit(Vector2f& destination);
+    void move(Vector2f& p);
+    void flip();
+    std::vector<Vector2f> getPoints();    
     void calculateShapeFromPoints();
     bool contains(Vector2f& point);
     float triArea(Vector2f& p1, Vector2f& p2, Vector2f& p3);

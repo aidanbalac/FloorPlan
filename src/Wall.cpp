@@ -1,4 +1,4 @@
-#include "Wall.h"
+#include "../include/Wall.hpp"
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cmath>
@@ -6,15 +6,16 @@
 #include <iostream>
 #include <list>
 
-// wall is defined by orgin at p1
-// p2 is the top right corner, "top and bottom are midpoints as shown below
+// walls are defined by orgin at p1. p2 is the top right corner, 
+// "top" and "bottom" are midpoints as shown below used for editing wall thickness
+// p3 and p4 are the bottom right and bottom left corners respectively, used for corner snapping
 //
 //                           top
 //  origin/p1 *---------------*---------------* p2
 //            |                               |
 //            |                               |
 //            |                               |
-//            +---------------*---------------+  
+//        p4  +---------------*---------------+  p3
 //                          bottom
 //
 using namespace sf;
@@ -26,6 +27,8 @@ shape(RectangleShape(Vector2f(1, 1))), p1shape(CircleShape(.3)), p2shape(CircleS
 topshape(CircleShape(.3)), bottomshape(CircleShape(.3)) {
     p1 = Vector2f(point.x, point.y);
     p2 = p1 + Vector2f(1, 0);
+    p3 = p1 + Vector2f(1, thickness);
+    p4 = p1 + Vector2f(0, thickness);
     top = p1 + Vector2f(.5, 0);
     bottom = p1 + Vector2f(.5, thickness);
     calculateShapeFromPoints();
@@ -171,23 +174,26 @@ void Wall::move(Vector2f& p) {
     calculateShapeFromPoints();
 }     
 
+// Rotates wall 180 degrees about "top" point , flips selected point {P1, P2}
+// ONLY USED DURING BUILD_WALL MODE!! Nothing will break but why would this feature be used otherwise?
+void Wall::flip() {
+    Vector2f temp = p1;
+    p1 = p2;
+    p2 = temp;
+    bottom = top + top - bottom;
+    selectedPoint = selectedPoint == P1 ? P2 : P1;
+    calculateShapeFromPoints();
+}
 
-//                           top
-//  origin/p1 *---------------*---------------* p2
-//            |                               |
-//            |                               |
-//            |                               |
-//            +---------------*---------------+  
-//                          bottom
-
-
-void Wall::calculatePointsFromShape() {
-    //Corners
-    p1 = shape.getPosition();
-    p2 = shape.getPoint(1);
-    //Midpoints
-    top = p1 + (p2 - p1)*.5f;
-    bottom = p1 + (p2 - p1)*.5f + Vector2f(0, shape.getSize().y);
+std::vector<Vector2f> Wall::getPoints() {
+    std::vector<Vector2f> points;
+    Vector2f p3 = p2 + bottom - top;
+    Vector2f p4 = p1 + bottom - top;
+    points.push_back(p1);
+    points.push_back(p2);
+    points.push_back(p3);
+    points.push_back(p4);
+    return points;
 }
 
 void Wall::calculateShapeFromPoints() {
