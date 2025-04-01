@@ -14,7 +14,7 @@ int main(){
 
     Structure structure = Structure();
     Inputs inputs = Inputs();
-    structure.loadFloorPlan("2-house-plan.png");
+    structure.loadFloorPlan("res/2-house-plan.png");
 
     // Create a window with a resolution of 800x600 and a title
     sf::RenderWindow window(sf::VideoMode(800, 600), "FloorPlan");
@@ -25,7 +25,7 @@ int main(){
     sf::View textView = window.getDefaultView();
 
     
-    if(!font.loadFromFile("MarkerFelt.ttc")) // load font
+    if(!font.loadFromFile("res/MarkerFelt.ttc")) // load font
         return -1; // Handle font loading error
 
     // // Create menu area

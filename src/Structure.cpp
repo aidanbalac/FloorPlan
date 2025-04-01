@@ -2,6 +2,7 @@
 #include "../include/Structure.hpp"
 #include "../include/Inputs.hpp" 
 
+
 Structure::Structure() {
     currentMode = SELECT;
     BUILDING_WALL = false;
@@ -54,10 +55,49 @@ void Structure::removeWalls() {
 }
 
 // edits the wall based on mouse position
-void Structure::editWall(sf::Vector2f& point) {
+void Structure::editWall(sf::Vector2f& point, bool _alignWall) {
     if (selectedWalls.size() != 1) 
         throw std::runtime_error("Selected walls size is not 1, something is amiss");
-    selectedWalls[0]->edit(point);
+
+    sf::Vector2f newPoint = snapCorner(point);
+    if (_alignWall)
+        newPoint = alignWall(newPoint);
+    selectedWalls[0]->edit(newPoint);
+}
+
+// snaps the corner of the wall to the grid
+sf::Vector2f Structure::snapCorner(sf::Vector2f& point) {
+    if (selectedWalls.size() != 1) 
+        throw std::runtime_error("Selected walls size is not 1, something is amiss");
+    for (Wall& wall : walls){
+        std::vector<sf::Vector2f> points = wall.getPoints();
+        for (sf::Vector2f& p : points){
+            float distance = sqrt(pow(p.x - point.x, 2) + pow(p.y - point.y, 2));
+            if (distance < 5){
+                return p;
+            }
+        }
+    }
+    return point;
+}
+
+// aligns the cardinal directionsthe grid
+sf::Vector2f Structure::alignWall(sf::Vector2f& point) {
+    if (selectedWalls.size() != 1) 
+        throw std::runtime_error("Selected walls size is not 1, something is amiss");
+    float rotation = selectedWalls[0]->shape.getRotation();
+    if (rotation < 5 || rotation > 355 || rotation < 175 && rotation > 185){
+        Vector2f direction = sf::Vector2f(0, 1);
+        float vertical = point.x*direction.x + point.y*direction.y;
+        return direction*vertical;
+    }
+    else if (rotation < 85 && rotation > 95 || rotation < 275 && rotation > 285){
+        Vector2f direction = sf::Vector2f(1, 0);
+        float horizontal = point.x*direction.x + point.y*direction.y;
+        return direction*horizontal;
+    }
+    else
+        return point;
 }
 
 // moves the wall based on mouse position
@@ -131,7 +171,8 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
         }
         // update the wall
         if (BUILDING_WALL)
-            editWall(inputs.worldPos);
+            editWall(inputs.worldPos, inputs.Shift_held);             
+            
         // start a new wall, finishes building current wall if one is active.
         if (inputs.leftReleased){
             BUILDING_WALL = true;
@@ -152,7 +193,7 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
         if (inputs.leftReleased)   
             currentMode = SELECT;
         else
-            editWall(inputs.worldPos);
+            editWall(inputs.worldPos, inputs.Shift_held);
     }
 
     // Handle moveWall mode. stop when the left button is released

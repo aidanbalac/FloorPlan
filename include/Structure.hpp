@@ -34,9 +34,10 @@ public:
     void unselectWall(Wall& wall); // unselects a wall
     void unselectAllWalls(); // unselects all walls
     void removeWalls(); // removes selected walls
-    void editWall(sf::Vector2f& point); // edits a point of a wall, includes rotation
+    void editWall(sf::Vector2f& point, bool shiftHeld); // edits a point of a wall, includes rotation
     void moveWall(sf::Vector2f& point); // moves a wall
-
+    sf::Vector2f alignWall(sf::Vector2f& point); // aligns a wall to the grid
+    sf::Vector2f snapCorner(sf::Vector2f& point); // snaps a corner to the grid
     void splitWall(sf::Vector2f& point);// splits wall and creates new wall
     void mergeWalls(Wall& wall1, Wall& wall2);// merges two walls and creates a new wall
     std::string getModeString(Mode mode);
