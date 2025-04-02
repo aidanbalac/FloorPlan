@@ -6,4 +6,5 @@ out
 .vs
 .vscode
 CMakeSettings.json
+CMakePresets.json
 .DS_Store

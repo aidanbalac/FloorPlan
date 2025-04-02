@@ -1,5 +1,5 @@
 #include <SFML/Window.hpp>
-#include "../include/Inputs.hpp"
+#include "Inputs.hpp"
 
 Inputs::Inputs() {
     // Mouse position

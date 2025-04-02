@@ -1,4 +1,4 @@
-#include "../include/Wall.hpp"
+#include "Wall.hpp"
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cmath>
@@ -23,8 +23,8 @@ using namespace sf;
 
 
 Wall::Wall(Vector2f& point, float thickness) : 
-shape(RectangleShape(Vector2f(1, 1))), p1shape(CircleShape(.3)), p2shape(CircleShape(.3)), 
-topshape(CircleShape(.3)), bottomshape(CircleShape(.3)) {
+shape(RectangleShape(Vector2f(1, 1))), p1shape(CircleShape(3)), p2shape(CircleShape(3)), 
+topshape(CircleShape(3)), bottomshape(CircleShape(3)) {
     p1 = Vector2f(point.x, point.y);
     p2 = p1 + Vector2f(1, 0);
     p3 = p1 + Vector2f(1, thickness);
@@ -32,10 +32,11 @@ topshape(CircleShape(.3)), bottomshape(CircleShape(.3)) {
     top = p1 + Vector2f(.5, 0);
     bottom = p1 + Vector2f(.5, thickness);
     calculateShapeFromPoints();
+    flipped = false;
     selected = false;
     selectedPoint = P2; // initializes selected point to p2 for immediate editing
     shape.setFillColor(Color(200, 200, 200)); // Light grey RGB values
-    shape.setOutlineThickness(-.1);
+    shape.setOutlineThickness(-2);
     shape.setOutlineColor(Color::Black);
     shape.setPosition(p1);
     p1shape.setFillColor(Color::Blue);
@@ -85,14 +86,14 @@ bool Wall::selectPoint(Vector2f& target) {
 // tells the wall it is selected
 void Wall::select() {
     shape.setOutlineColor(Color::Red);
-    shape.setOutlineThickness(-.3);
+    // shape.setOutlineThickness(-2);
     selected = true;
 }
 
 // tells the wall it is not selected
 void Wall::unselect() {
     shape.setOutlineColor(Color::Black);
-    shape.setOutlineThickness(-.1);
+    // shape.setOutlineThickness(-2);
     selectedPoint = None;
     selected = false;
 }   
@@ -182,6 +183,7 @@ void Wall::flip() {
     p2 = temp;
     bottom = top + top - bottom;
     selectedPoint = selectedPoint == P1 ? P2 : P1;
+    flipped = !flipped;
     calculateShapeFromPoints();
 }
 

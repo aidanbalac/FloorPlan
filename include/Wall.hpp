@@ -34,6 +34,7 @@ public:
     Vector2f p4;
     Vector2f top;
     Vector2f bottom;
+    bool flipped;
     bool selected;
     selectedPoint selectedPoint;
     

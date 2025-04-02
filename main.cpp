@@ -1,7 +1,7 @@
         
-#include "../include/Wall.hpp"
-#include "../include/Structure.hpp"
-#include "../include/Inputs.hpp"
+#include "Wall.hpp"
+#include "Structure.hpp"
+#include "Inputs.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <vector>
@@ -115,10 +115,10 @@ int main(){
                 textView.setSize(visibleArea.width, visibleArea.height);
                 window.setView(mainView);
             }
-            if (event.type == sf::Event::MouseWheelMoved){ // catch the mouse wheel events
-                if (event.mouseWheel.delta > 0)
+            if (event.type == sf::Event::MouseWheelScrolled){ // catch the mouse wheel events
+                if (event.mouseWheelScroll.delta > 0 && !inputs.rightHeld && !inputs.leftHeld)
                     mainView.zoom(1.1f);
-                else if (event.mouseWheel.delta < 0)
+                else if (event.mouseWheelScroll.delta < 0 && !inputs.rightHeld && !inputs.leftHeld)
                     mainView.zoom(0.9f);
             }
             if (event.type == sf::Event::MouseButtonPressed){ // catch the mouse button pressed events
@@ -183,7 +183,10 @@ int main(){
         // window.draw(buildWallText);
         std::string modeString = structure.getModeString(structure.currentMode);
         modeText.setString("Mode: " + modeString);
-        debugText.setString("view: " + std::to_string(mainView.getCenter().x) + " " + std::to_string(mainView.getCenter().y) + "\n" + "size: " + std::to_string(mainView.getSize().x) + " " + std::to_string(mainView.getSize().y));
+        if (structure.selectedWalls.size() == 1){
+            Wall* wall = structure.selectedWalls[0];
+            debugText.setString("rotation: " + std::to_string(wall->shape.getRotation()) + "\n" );
+        }
         window.draw(modeText);
         window.draw(debugText);
 

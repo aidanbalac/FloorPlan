@@ -1,7 +1,7 @@
 
-#include "../include/Structure.hpp"
-#include "../include/Inputs.hpp" 
-
+#include "Structure.hpp"
+#include "Inputs.hpp" 
+#include <algorithm>
 
 Structure::Structure() {
     currentMode = SELECT;
@@ -50,25 +50,24 @@ void Structure::unselectAllWalls() {
 // deletes all walls in selectedWalls
 void Structure::removeWalls() {  
     for (Wall* wallpointer : selectedWalls) 
-        walls.erase(walls.begin() + (wallpointer - &walls[0]));
+        walls.erase(std::remove_if(walls.begin(), walls.end(),
+            [wallpointer](const Wall& w) { return &w == wallpointer; }), walls.end());
     selectedWalls.clear();
 }
 
 // edits the wall based on mouse position
-void Structure::editWall(sf::Vector2f& point, bool _alignWall) {
+void Structure::editWall(sf::Vector2f& point, bool _ignoreAlignWall) {
     if (selectedWalls.size() != 1) 
         throw std::runtime_error("Selected walls size is not 1, something is amiss");
 
     sf::Vector2f newPoint = snapCorner(point);
-    if (_alignWall)
+    if (!_ignoreAlignWall)
         newPoint = alignWall(newPoint);
     selectedWalls[0]->edit(newPoint);
 }
 
 // snaps the corner of the wall to the grid
 sf::Vector2f Structure::snapCorner(sf::Vector2f& point) {
-    if (selectedWalls.size() != 1) 
-        throw std::runtime_error("Selected walls size is not 1, something is amiss");
     for (Wall& wall : walls){
         std::vector<sf::Vector2f> points = wall.getPoints();
         for (sf::Vector2f& p : points){
@@ -81,21 +80,18 @@ sf::Vector2f Structure::snapCorner(sf::Vector2f& point) {
     return point;
 }
 
-// aligns the cardinal directionsthe grid
+// aligns to the cardinal directions of the grid
 sf::Vector2f Structure::alignWall(sf::Vector2f& point) {
-    if (selectedWalls.size() != 1) 
-        throw std::runtime_error("Selected walls size is not 1, something is amiss");
-    float rotation = selectedWalls[0]->shape.getRotation();
-    if (rotation < 5 || rotation > 355 || rotation < 175 && rotation > 185){
-        Vector2f direction = sf::Vector2f(0, 1);
-        float vertical = point.x*direction.x + point.y*direction.y;
-        return direction*vertical;
-    }
-    else if (rotation < 85 && rotation > 95 || rotation < 275 && rotation > 285){
-        Vector2f direction = sf::Vector2f(1, 0);
-        float horizontal = point.x*direction.x + point.y*direction.y;
-        return direction*horizontal;
-    }
+    // get the orgin of the wall, accounting for flipped walls
+    sf::Vector2f orgin = selectedWalls[0]->flipped ? selectedWalls[0]->p2 : selectedWalls[0]->p1;
+    sf::Vector2f direction = point - orgin;
+    float rotation = atan2(direction.y, direction.x) * 180 / M_PI;
+    if (rotation < 0)
+        rotation += 360;
+    if (rotation < 5 || rotation > 355 || (rotation > 175 && rotation < 185))
+        return sf::Vector2f(point.x, orgin.y);
+    else if ((rotation > 85 && rotation < 95) || (rotation > 265 && rotation < 275))
+        return sf::Vector2f(orgin.x, point.y);
     else
         return point;
 }
@@ -152,18 +148,6 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
     // }
 
 
-    // Handle panning mode. stop when the left button is released
-    if (PANNING){
-        if (inputs.rightReleased || inputs.leftReleased)
-            PANNING = false;
-        else{
-            mainView.setCenter(mainView.getCenter() + inputs.worldPosOld - inputs.worldPos);
-            window.setView(mainView);
-            inputs.worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window)); // recaculate because of view change
-            //inputs.worldPosOld = window.mapPixelToCoords(sf::Mouse::getPosition(window)); // recaculate because of view change
-        }
-    }     
-
     // handle the build wall mode
     if (currentMode == BUILD_WALL){
         if (inputs.spaceReleased){
@@ -176,13 +160,23 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
         // start a new wall, finishes building current wall if one is active.
         if (inputs.leftReleased){
             BUILDING_WALL = true;
-            unselectAllWalls();
-            addWall(inputs.worldPos);}
+            if (selectedWalls.size() ==1){ //
+                sf::Vector2f endpoint = selectedWalls[0]->flipped ? selectedWalls[0]->p1 : selectedWalls[0]->p2;
+                unselectAllWalls();
+                addWall(endpoint);
+            }
+            else{
+                unselectAllWalls();
+                addWall(inputs.worldPos);
+            }
+        }
 
-        if (inputs.rightReleased && BUILDING_WALL){ // right click while building wall to remove the current wall
+        // right click while building wall to remove the current wall
+        if (inputs.rightPressed && BUILDING_WALL && !PANNING){ 
             removeWalls();
             BUILDING_WALL = false;}
-        else if (inputs.rightReleased && !BUILDING_WALL){ // right click while not building wall to leave build wall mode
+        // right click while not building wall to leave build wall mode
+        else if (inputs.rightPressed && !BUILDING_WALL && !PANNING){ 
             BUILDING_WALL = false;
             unselectAllWalls();
             currentMode = SELECT;}
@@ -208,12 +202,25 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
             inputs.worldPosOld = inputs.worldPos;
         }
     }
+
     
     if (inputs.rightPressed)
         PANNING = true;
+
+    // Handle panning mode. stop when the left button is released
+    if (PANNING){
+        if (!inputs.rightHeld && !inputs.leftHeld)
+            PANNING = false;
+        else{
+            mainView.setCenter(mainView.getCenter() + inputs.worldPosOld - inputs.worldPos);
+            window.setView(mainView);
+            inputs.worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window)); // recaculate because of view change
+            //inputs.worldPosOld = window.mapPixelToCoords(sf::Mouse::getPosition(window)); // recaculate because of view change
+        }
+    }     
     
     // user left clicked on *something*, decide what based on click location and current mode
-    if (inputs.leftPressed){
+    if (inputs.leftPressed && currentMode != BUILD_WALL){
         bool wallPressed = false;
         // check if the user clicked on a wall
         for (Wall& wall : walls){
@@ -222,8 +229,10 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
                     break;
                 }
         }   
-        if (!wallPressed)
+        if (!wallPressed){
+            unselectAllWalls();
             PANNING = true;      
+        }
         else if (selectedWalls.size() == 1){
             Wall* wall = selectedWalls[0];
             if (wall->selectPoint(inputs.worldPos))
@@ -255,10 +264,7 @@ void Structure::update(sf::RenderWindow& window, sf::View& mainView, Inputs& inp
 
     if (inputs.B_Released){ // Toggle build wall mode
         unselectAllWalls();
-        if (currentMode == BUILD_WALL)
-            currentMode =  SELECT;
-        else 
-            currentMode = BUILD_WALL;
+        currentMode = currentMode == BUILD_WALL ? SELECT : BUILD_WALL;
     }
     // user D key to delete a wall, does nothing if no walls are selected
     if (inputs.D_Released){

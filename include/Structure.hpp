@@ -3,8 +3,8 @@
 #include <vector>
 #include <string>
 #include <SFML/Graphics.hpp>
-#include "../include/Wall.hpp"
-#include "../include/Inputs.hpp"   
+#include "Wall.hpp"
+#include "Inputs.hpp"   
 
 class Structure {
 public:
